@@ -1,6 +1,8 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ProductosService } from '../../services/productos';
 import { CarritoService } from '../../services/carrito'; 
+import { AuthService } from '../../services/auth'; // <-- Importamos el servicio de Auth
+import { Router } from '@angular/router'; // <-- Importamos el Router
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import Swal from 'sweetalert2'; 
 
@@ -14,6 +16,8 @@ import Swal from 'sweetalert2';
 export class Productos implements OnInit {
   private prodService = inject(ProductosService);
   private carritoSvc = inject(CarritoService);
+  public authSvc = inject(AuthService); // <-- Inyectamos Auth
+  private router = inject(Router);      // <-- Inyectamos Router
 
   listaProductos = signal<any[]>([]);
   textoFiltro = signal('');
@@ -38,10 +42,28 @@ export class Productos implements OnInit {
   }
 
   agregarAlCarrito(producto: any) {
-    // 1. Ejecutamos la lógica del carrito
+    // --- PASO 1: VALIDACIÓN DE SESIÓN ---
+    if (!this.authSvc.usuarioActual()) {
+      Swal.fire({
+        title: '¡Atención!',
+        text: 'Debes iniciar sesión para agregar productos al carrito ☕',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#3e2723',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ir al Login',
+        cancelButtonText: 'Seguir mirando'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/login']);
+        }
+      });
+      return; // Detenemos la ejecución aquí
+    }
+
+    // --- PASO 2: LÓGICA NORMAL (Si está logueado) ---
     this.carritoSvc.agregarProducto(producto);
 
-    // 2. Mostramos el Toast elegante
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',
@@ -60,4 +82,6 @@ export class Productos implements OnInit {
       text: '¡Añadido al carrito con éxito!'
     });
   }
+
+  
 }

@@ -1,21 +1,23 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth';
-import { CommonModule } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-historial',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './historial.html'
+  imports: [CommonModule, CurrencyPipe],
+  templateUrl: './historial.html',
+  styleUrl: './historial.css'
 })
 export class HistorialComponent {
   private http = inject(HttpClient);
   private authSvc = inject(AuthService);
   
+  // Signals para manejar el estado de la vista
   pedidos = signal<any[]>([]);
   detallesPedido = signal<any[]>([]);
 
@@ -34,141 +36,109 @@ export class HistorialComponent {
     }
   }
 
-  verDetalles(id_pedido: number) {
+  // --- VER DETALLES EN EL MODAL ---
+  verDetalles(id_pedido: any) {
     this.http.get<any[]>(`http://localhost:3000/api/pedidos/detalle/${id_pedido}`)
       .subscribe({
         next: (data) => {
-          this.detallesPedido.set(data);
+          console.log('Datos recibidos del servidor:', data);
+          
+          // Si la API devuelve un arreglo vacío, al menos limpiamos el estado
+          if (data && data.length > 0) {
+            this.detallesPedido.set(data);
+          } else {
+            this.detallesPedido.set([]);
+            console.warn('El pedido no tiene productos asociados en la base de datos.');
+          }
         },
         error: (err) => {
-          console.error('Error en la petición:', err);
-          Swal.fire({
-            icon: 'error',
-            title: 'No se pudieron ver los detalles',
-            text: 'Inténtalo de nuevo más tarde.',
-            confirmButtonColor: '#3e2723'
-          });
+          console.error('Error al conectar con la API:', err);
+          this.detallesPedido.set([]);
         }
       });
   }
 
+  // --- PROCESAR PAGO ---
   pagar(id_pedido: number) {
     this.http.put('http://localhost:3000/api/pedidos/pagar', { id_pedido })
       .subscribe({
         next: (res: any) => {
-          // Alerta de éxito al pagar
           Swal.fire({
             icon: 'success',
-            title: '¡Pago procesado!',
-            text: 'Tu pedido ahora está en preparación. ¡Gracias! ☕',
-            confirmButtonColor: '#198754'
+            title: '¡Pago exitoso!',
+            text: 'Tu pedido está en camino. ☕',
+            confirmButtonColor: '#3e2723'
           });
           this.cargarHistorial(); 
         },
         error: (err) => {
-          console.error('Error al pagar:', err);
           Swal.fire({
             icon: 'error',
-            title: 'Pago fallido',
-            text: 'No pudimos procesar el pago. Revisa tu conexión.',
+            title: 'Error en el pago',
+            text: 'No se pudo procesar la transacción.',
             confirmButtonColor: '#3e2723'
           });
         }
       });
   }
 
+  // --- GENERAR PDF ---
   generarTicket(pedido: any) {
-    // 1. Mostrar alerta de carga
+    // Alerta de espera
     Swal.fire({
       title: 'Generando Ticket...',
-      text: 'Preparando el archivo PDF',
+      text: 'Preparando tu comprobante de La Finca',
       allowOutsideClick: false,
       didOpen: () => {
         Swal.showLoading();
       }
     });
 
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
+    const doc = new jsPDF();
+    const colorCafe: [number, number, number] = [62, 39, 35];
 
-    // Colores de marca
-    const colorCafe: [number, number, number] = [62, 39, 35]; 
-    const colorVerde: [number, number, number] = [45, 90, 39];
-
-    // --- Diseño Base ---
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.setTextColor(colorCafe[0], colorCafe[1], colorCafe[2]);
-    doc.text('LA FINCA', 105, 20, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text('Café de Especialidad', 105, 25, { align: 'center' });
-    doc.line(20, 32, 190, 32);
-
-    doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.text(`TICKET DE COMPRA: #${pedido.id_pedido}`, 20, 42);
-    doc.setFontSize(10);
-    doc.text(`Fecha: ${new Date(pedido.fecha).toLocaleString()}`, 20, 49);
-
-    // --- 2. Petición de Detalles ---
+    // Primero obtenemos los detalles del servidor para asegurar que el PDF esté completo
     this.http.get<any[]>(`http://localhost:3000/api/pedidos/detalle/${pedido.id_pedido}`)
       .subscribe({
-        next: (detalles) => {
-          // Si no llegan detalles, avisamos
-          if (!detalles || detalles.length === 0) {
-            Swal.fire('Error', 'No se encontraron productos en este pedido', 'error');
-            return;
-          }
+        next: (detallesServidor) => {
+          
+          // Diseño del PDF
+          doc.setFontSize(22);
+          doc.setTextColor(colorCafe[0], colorCafe[1], colorCafe[2]);
+          doc.text('LA FINCA - CAFETERÍA', 105, 20, { align: 'center' });
+          
+          doc.setFontSize(12);
+          doc.setTextColor(0);
+          doc.text(`TICKET DE COMPRA: #${pedido.id_pedido}`, 20, 40);
+          doc.text(`Fecha: ${new Date(pedido.fecha).toLocaleString()}`, 20, 47);
 
-          // Mapeo de datos para la tabla
-          const bodyTable = detalles.map(item => [
+          // Tabla de productos
+          const bodyTable = detallesServidor.map(item => [
             item.nombre,
-            { content: item.cantidad, styles: { halign: 'center' } },
-            { content: `$${Number(item.precio).toFixed(2)}`, styles: { halign: 'right' } },
-            { content: `$${(Number(item.cantidad) * Number(item.precio)).toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
+            item.cantidad,
+            `$${Number(item.precio).toFixed(2)}`,
+            `$${(Number(item.cantidad) * Number(item.precio)).toFixed(2)}`
           ]);
 
-          // Generación de la tabla
           autoTable(doc, {
-            startY: 60,
-            margin: { horizontal: 20 },
+            startY: 55,
             head: [['Producto', 'Cant.', 'Precio Unit.', 'Subtotal']],
             body: bodyTable,
-            theme: 'striped',
-            headStyles: { fillColor: colorCafe, textColor: [255, 255, 255] },
+            headStyles: { fillColor: colorCafe },
+            theme: 'striped'
           });
 
-          // --- 3. Total Final ---
           const finalY = (doc as any).lastAutoTable.finalY || 100;
-          doc.setFontSize(14);
-          doc.setFont('helvetica', 'bold');
-          doc.text('TOTAL:', 140, finalY + 15, { align: 'right' });
-          
-          doc.setTextColor(colorVerde[0], colorVerde[1], colorVerde[2]);
-          doc.setFontSize(22);
-          doc.text(`$${Number(pedido.total).toFixed(2)}`, 190, finalY + 15, { align: 'right' });
+          doc.setFontSize(16);
+          doc.text(`TOTAL: $${Number(pedido.total).toFixed(2)}`, 190, finalY + 15, { align: 'right' });
 
-          // --- 4. Guardar y Cerrar Alertas ---
+          // Guardar y cerrar
           doc.save(`Ticket_LaFinca_#${pedido.id_pedido}.pdf`);
-          Swal.close(); 
-          
-          Swal.fire({
-            icon: 'success',
-            title: '¡Listo!',
-            text: 'Tu ticket se ha descargado.',
-            timer: 1500,
-            showConfirmButton: false
-          });
+          Swal.close();
         },
         error: (err) => {
-          console.error("Error al obtener detalles:", err);
           Swal.close();
-          Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+          Swal.fire('Error', 'No se pudo generar el archivo PDF.', 'error');
         }
       });
   }
