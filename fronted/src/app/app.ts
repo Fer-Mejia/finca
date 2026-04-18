@@ -29,15 +29,20 @@ export class App {
       text: "¡Te extrañaremos! Vuelve pronto por un café.",
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#3e2723', // Color café
+      confirmButtonColor: '#3e2723', // Tu color café
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Sí, salir',
       cancelButtonText: 'Cancelar'
     }).then((result) => {
+      // IMPORTANTE: Todo debe ocurrir AQUÍ ADENTRO
       if (result.isConfirmed) {
-        this.authSvc.logout();
-        // Nota: Si tu authSvc.logout ya tiene el router.navigate, no hace falta ponerlo aquí.
-        
+        // 1. Borramos los datos (esto limpia el Signal y el localStorage)
+        this.authSvc.logout(); 
+
+        // 2. Mandamos al usuario al login
+        this.router.navigate(['/login']);
+
+        // 3. Alerta final de despedida (opcional)
         Swal.fire({
           title: '¡Sesión cerrada!',
           icon: 'success',

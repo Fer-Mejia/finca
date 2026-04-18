@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { tap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
-import Swal from 'sweetalert2'; // <-- Importamos SweetAlert
+import Swal from 'sweetalert2';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +15,7 @@ export class AuthService {
   private urlLogin = 'http://localhost:3000/api/usuarios/login';
   private urlRegistro = 'http://localhost:3000/api/usuarios';
 
+  // El Signal se inicializa con lo que haya en el Storage
   usuarioActual = signal<any>(JSON.parse(localStorage.getItem('usuario') || 'null'));
 
   login(correo: string, password: string) {
@@ -22,24 +23,22 @@ export class AuthService {
       tap((res: any) => {
         if (res && res.usuario) {
           localStorage.setItem('usuario', JSON.stringify(res.usuario));
-          this.usuarioActual.set(res.usuario);
+          this.usuarioActual.set(res.usuario); // Actualiza la app
 
-          // Alerta de éxito
           Swal.fire({
             icon: 'success',
             title: '¡Bienvenido!',
-            text: `Hola de nuevo, ${res.usuario.nombre || 'café-adicto'}`,
+            text: `Hola de nuevo, ${res.usuario.nombre}`,
             timer: 2000,
             showConfirmButton: false
           });
         }
       }),
       catchError((err) => {
-        // Alerta de error si los datos son incorrectos
         Swal.fire({
           icon: 'error',
           title: 'Error de acceso',
-          text: 'Correo o contraseña incorrectos. Inténtalo de nuevo.',
+          text: 'Correo o contraseña incorrectos.',
           confirmButtonColor: '#3e2723'
         });
         return of(err);
@@ -53,7 +52,7 @@ export class AuthService {
         Swal.fire({
           icon: 'success',
           title: '¡Cuenta creada!',
-          text: 'Ya puedes iniciar sesión en La Finca.',
+          text: 'Ya puedes iniciar sesión.',
           confirmButtonColor: '#3e2723'
         });
       }),
@@ -61,7 +60,7 @@ export class AuthService {
         Swal.fire({
           icon: 'error',
           title: 'Error al registrar',
-          text: 'No pudimos crear tu cuenta. Verifica tus datos.',
+          text: 'No pudimos crear tu cuenta.',
           confirmButtonColor: '#3e2723'
         });
         return of(err);
@@ -69,30 +68,10 @@ export class AuthService {
     );
   }
 
+  // LOGOUT LIMPIO: Solo borra datos
   logout() {
-    // Alerta de confirmación antes de salir
-    Swal.fire({
-      title: '¿Cerrar sesión?',
-      text: "¡Te extrañaremos por aquí!",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3e2723',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Sí, salir',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        localStorage.removeItem('usuario');
-        this.usuarioActual.set(null);
-        this.router.navigate(['/login']);
-        
-        Swal.fire({
-          title: '¡Sesión cerrada!',
-          icon: 'success',
-          timer: 1000,
-          showConfirmButton: false
-        });
-      }
-    });
+    localStorage.removeItem('usuario');
+    this.usuarioActual.set(null); // Esto limpia el Nav al instante
+    this.router.navigate(['/login']);
   }
 }
