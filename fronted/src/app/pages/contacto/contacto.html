@@ -12,7 +12,6 @@
           width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
         </iframe>
       </div>
-      
       <div class="d-flex align-items-center mb-3">
         <i class="bi bi-geo-alt-fill fs-4 me-3 text-success"></i>
         <span>Av. Madero #123, Zona Centro, Aguascalientes, Ags.</span>
@@ -27,31 +26,28 @@
       <div class="bg-white p-4 rounded-4 shadow-sm border">
         <h3 class="mb-4">Envíanos un mensaje</h3>
         
-        <form #miFormulario="ngForm">
+        <form [formGroup]="miFormulario" (ngSubmit)="enviarMensaje()">
           
           <div class="mb-3">
             <label class="form-label">Nombre completo</label>
-            <input type="text" name="nombre" class="form-control" 
-                   [(ngModel)]="datosContacto.nombre" required #nombreModel="ngModel"
-                   placeholder="Ej. Juan Pérez">
-            <div class="text-danger small mt-1" *ngIf="nombreModel.invalid && nombreModel.touched">
-              Por favor, dinos tu nombre.
+            <input type="text" formControlName="nombre" class="form-control" placeholder="Ej. Juan Pérez">
+            <div class="text-danger small mt-1" *ngIf="miFormulario.get('nombre')?.invalid && miFormulario.get('nombre')?.touched">
+              <span *ngIf="miFormulario.get('nombre')?.errors?.['required']">El nombre es obligatorio.</span>
+              <span *ngIf="miFormulario.get('nombre')?.errors?.['minlength']">Mínimo 3 letras.</span>
             </div>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Correo electrónico</label>
-            <input type="email" name="email" class="form-control" 
-                   [(ngModel)]="datosContacto.email" required email #emailModel="ngModel"
-                   placeholder="nombre@correo.com">
-            <div class="text-danger small mt-1" *ngIf="emailModel.invalid && emailModel.touched">
-              Necesitamos un correo válido para responderte.
+            <input type="email" formControlName="email" class="form-control" placeholder="nombre@correo.com">
+            <div class="text-danger small mt-1" *ngIf="miFormulario.get('email')?.invalid && miFormulario.get('email')?.touched">
+              Debe ser un correo válido.
             </div>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Asunto</label>
-            <select class="form-select" name="asunto" [(ngModel)]="datosContacto.asunto">
+            <select class="form-select" formControlName="asunto">
               <option value="Queja o Sugerencia">Queja o Sugerencia</option>
               <option value="Eventos y Reservaciones">Eventos y Reservaciones</option>
               <option value="Bolsa de trabajo">Bolsa de trabajo</option>
@@ -60,15 +56,15 @@
 
           <div class="mb-3">
             <label class="form-label">Mensaje</label>
-            <textarea class="form-control" name="mensaje" rows="4" 
-                      [(ngModel)]="datosContacto.mensaje" required #msgModel="ngModel"
-                      placeholder="¿En qué podemos ayudarte?"></textarea>
+            <textarea class="form-control" formControlName="mensaje" rows="4" placeholder="¿En qué podemos ayudarte?"></textarea>
+            <div class="text-danger small mt-1" *ngIf="miFormulario.get('mensaje')?.invalid && miFormulario.get('mensaje')?.touched">
+              El mensaje debe tener al menos 10 caracteres.
+            </div>
           </div>
 
-          <button type="button" 
+          <button type="submit" 
                   class="btn btn-success w-100 py-2 fw-bold" 
-                  [disabled]="miFormulario.invalid"
-                  (click)="enviarMensaje()">
+                  [disabled]="miFormulario.invalid">
             Enviar Mensaje
           </button>
         </form>
