@@ -1,0 +1,83 @@
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #3D2B1F;">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" routerLink="/">
+      <img src="Logo.png" alt="Logo" width="40" class="me-2 rounded-circle" style="background: white;">
+      <span class="fw-bold">La Finca</span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="navbar-nav ms-auto align-items-center">
+        <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a>
+        <a class="nav-link" routerLink="/productos" routerLinkActive="active">Menú</a>
+        <a class="nav-link" routerLink="/carrito" routerLinkActive="active">Carrito</a>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/historial">Mis Pedidos</a>
+        </li>
+
+        <a class="nav-link" routerLink="/login" routerLinkActive="active" *ngIf="!authSvc.usuarioActual()">
+          Entrar
+        </a>
+
+        <div class="d-flex align-items-center ms-lg-3" *ngIf="authSvc.usuarioActual()">
+          <span class="nav-link d-none d-md-inline pe-3 border-end" style="color: #A3AD85 !important;">
+            Hola, <strong>{{ authSvc.usuarioActual().nombre }}</strong>
+          </span>
+          <a class="nav-link text-warning fw-bold ps-3" style="cursor: pointer;" (click)="logout()">
+            Salir
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main style="min-height: 80vh;">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="footer-pro py-5" style="background: #1a120b; color: #e5e5e5; position: relative; overflow: hidden;">
+  <div style="position: absolute; right: -50px; bottom: -50px; font-size: 200px; opacity: 0.03; color: white;">☕</div>
+  
+  <div class="container position-relative">
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-6">
+        <h4 class="fw-bold mb-4" style="color: #A3AD85; font-family: 'Playfair Display';">La Finca</h4>
+        <p class="opacity-75 lh-lg">Orgullosamente hidrocálidos. Llevamos el mejor café de México a tu mesa con procesos sustentables y amor por el detalle.</p>
+      </div>
+
+      <div class="col-lg-2 col-md-6">
+        <h6 class="text-uppercase fw-bold mb-4 small">Menú</h6>
+        <ul class="list-unstyled">
+          <li class="mb-2"><a routerLink="/productos" class="text-reset text-decoration-none opacity-50 hover-opacity-100">Nuestros Cafés</a></li>
+          <li class="mb-2"><a routerLink="/contacto" class="text-reset text-decoration-none opacity-50">Ubicaciones</a></li>
+          <li class="mb-2"><a routerLink="/admin" class="text-reset text-decoration-none opacity-50">Panel Admin</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <h6 class="text-uppercase fw-bold mb-4 small">Newsletter</h6>
+        <div class="input-group mb-3">
+          <input type="text" #emailNews class="form-control rounded-0 bg-transparent text-white border-secondary" placeholder="Tu correo">
+          <button class="btn btn-outline-light rounded-0" type="button" (click)="suscribir(emailNews.value)">OK</button>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 text-center text-md-end">
+        <h6 class="text-uppercase fw-bold mb-4 small">Síguenos</h6>
+        <div class="d-flex justify-content-center justify-content-md-end gap-3">
+          <a href="https://es-la.facebook.com/" class="text-white opacity-75 hover-opacity-100"><i class="bi bi-facebook fs-4"></i></a>
+          <a href="https://www.instagram.com/" class="text-white opacity-75 hover-opacity-100"><i class="bi bi-instagram fs-4"></i></a>
+          <a href="https://web.whatsapp.com/" class="text-white opacity-75 hover-opacity-100"><i class="bi bi-whatsapp fs-4"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5 opacity-25">
+    <p class="text-center small opacity-50">&copy; 2026 Café La Finca | Diseñado para Amantes del Café</p>
+  </div>
+</footer>

@@ -1,0 +1,41 @@
+/* Color verde bosque para los botones principales */
+.btn-cafe {
+    background-color: #2d5a27;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-cafe:hover {
+    background-color: #1e3d1a;
+    color: white;
+    transform: scale(1.02);
+}
+
+/* Botón de seguir comprando con borde */
+.btn-outline-cafe {
+    color: #2d5a27;
+    border: 2px solid #2d5a27;
+    background-color: transparent;
+}
+
+.btn-outline-cafe:hover {
+    background-color: #f8fcf8;
+    color: #1e3d1a;
+    border-color: #1e3d1a;
+}
+
+.btn-outline-secondary {
+    border-color: #dee2e6;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #2d5a27; 
+    border-color: #2d5a27;
+    color: white;
+}

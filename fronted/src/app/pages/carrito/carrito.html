@@ -1,0 +1,108 @@
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold" style="color: #3e2723;">Tu Carrito de La Finca</h2>
+    
+    @if (carritoSvc.getCarrito().length > 0) {
+      <button 
+        (click)="carritoSvc.limpiarCarrito()" 
+        class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
+        <i class="bi bi-trash3"></i> 
+        Limpiar Carrito
+      </button>
+    }
+  </div>
+
+  @if (carritoSvc.getCarrito().length === 0) {
+    <div class="card text-center p-5 border-0 shadow-sm" style="background-color: #fafafa;">
+      <div class="card-body">
+        <i class="bi bi-cart-x display-1 text-muted"></i>
+        <p class="mt-3 fs-5 text-secondary">Aún no has agregado nada. ¡Ve por un café!</p>
+        
+        <a routerLink="/productos" class="btn btn-cafe mt-2 px-4 py-2">
+          <i class="bi bi-shop me-2"></i>Ver Catálogo
+        </a>
+      </div>
+    </div>
+  } 
+  
+  @else {
+    <div class="card shadow-sm border-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead style="background-color: #f5f5f5;">
+            <tr>
+              <th class="ps-4">Producto</th>
+              <th class="text-center">Precio Unit.</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-center">Subtotal</th>
+              <th class="text-end pe-4">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of carritoSvc.getCarrito(); track item.nombre) {
+              <tr>
+                <td class="ps-4">
+                  <span class="fw-medium">{{ item.nombre }}</span>
+                </td>
+                <td class="text-center">${{ item.precio }}</td>
+                
+                <td class="text-center">
+                  <div class="d-flex justify-content-center align-items-center gap-3">
+                    <button 
+                      (click)="carritoSvc.decrementarCantidad(item.nombre)" 
+                      class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                      style="width: 32px; height: 32px; font-weight: bold;">
+                      -
+                    </button>
+
+                    <span class="fw-bold fs-5" style="min-width: 25px;">
+                      {{ item.cantidad || 1 }}
+                    </span>
+
+                    <button 
+                      (click)="carritoSvc.incrementarCantidad(item.nombre)" 
+                      class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                      style="width: 32px; height: 32px; font-weight: bold;">
+                      +
+                    </button>
+                  </div>
+                </td>
+
+                <td class="text-center fw-bold">
+                  ${{ (item.precio * (item.cantidad || 1)) }}
+                </td>
+
+                <td class="text-end pe-4">
+                  <button 
+                    (click)="carritoSvc.eliminarProducto(item.nombre)" 
+                    class="btn btn-sm btn-outline-danger border-0"
+                    title="Eliminar todo">
+                    <i class="bi bi-trash fs-5"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="mt-4 p-4 bg-white rounded shadow-sm text-end border">
+      <h5 class="text-muted mb-1">Resumen del pedido</h5>
+      <h2 class="fw-bold mb-4">Total a pagar: <span style="color: #2d5a27;">${{ carritoSvc.totalPrecio() }}</span></h2>
+      
+      <div class="d-flex justify-content-end gap-3">
+        <a routerLink="/productos" class="btn btn-outline-cafe btn-lg px-4 d-flex align-items-center">
+          <i class="bi bi-arrow-left me-2"></i> Seguir Comprando
+        </a>
+        
+        <button 
+          (click)="carritoSvc.finalizarCompra()" 
+          class="btn btn-cafe btn-lg px-5"
+          [disabled]="carritoSvc.getCarrito().length === 0">
+          Finalizar Compra <i class="bi bi-credit-card ms-2"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>

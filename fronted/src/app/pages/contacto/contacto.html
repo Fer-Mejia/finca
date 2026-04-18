@@ -1,0 +1,79 @@
+<div class="container my-5 pt-5">
+  <div class="text-center mb-5">
+    <h2 class="display-4 fw-bold" style="color: #3D2B1F;">Visítanos</h2>
+    <p class="text-muted">El aroma del café te guiará a nuestra puerta.</p>
+  </div>
+
+  <div class="row g-5">
+    <div class="col-lg-6">
+      <div class="rounded-4 overflow-hidden shadow-lg mb-4" style="height: 400px;">
+        <iframe 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3702.257321617202!2d-102.2960432!3d21.8860458!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8429ee64654b4293%3A0x7d6b3a01f705e495!2sPlaza%20de%20la%20Patria!5e0!3m2!1ses-419!2smx!4v1700000000000" 
+          width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
+        </iframe>
+      </div>
+      
+      <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-geo-alt-fill fs-4 me-3 text-success"></i>
+        <span>Av. Madero #123, Zona Centro, Aguascalientes, Ags.</span>
+      </div>
+      <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-telephone-fill fs-4 me-3 text-success"></i>
+        <span>+52 (449) 123 4567</span>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="bg-white p-4 rounded-4 shadow-sm border">
+        <h3 class="mb-4">Envíanos un mensaje</h3>
+        
+        <form #miFormulario="ngForm">
+          
+          <div class="mb-3">
+            <label class="form-label">Nombre completo</label>
+            <input type="text" name="nombre" class="form-control" 
+                   [(ngModel)]="datosContacto.nombre" required #nombreModel="ngModel"
+                   placeholder="Ej. Juan Pérez">
+            <div class="text-danger small mt-1" *ngIf="nombreModel.invalid && nombreModel.touched">
+              Por favor, dinos tu nombre.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" name="email" class="form-control" 
+                   [(ngModel)]="datosContacto.email" required email #emailModel="ngModel"
+                   placeholder="nombre@correo.com">
+            <div class="text-danger small mt-1" *ngIf="emailModel.invalid && emailModel.touched">
+              Necesitamos un correo válido para responderte.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Asunto</label>
+            <select class="form-select" name="asunto" [(ngModel)]="datosContacto.asunto">
+              <option value="Queja o Sugerencia">Queja o Sugerencia</option>
+              <option value="Eventos y Reservaciones">Eventos y Reservaciones</option>
+              <option value="Bolsa de trabajo">Bolsa de trabajo</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Mensaje</label>
+            <textarea class="form-control" name="mensaje" rows="4" 
+                      [(ngModel)]="datosContacto.mensaje" required #msgModel="ngModel"
+                      placeholder="¿En qué podemos ayudarte?"></textarea>
+          </div>
+
+          <button type="button" 
+                  class="btn btn-success w-100 py-2 fw-bold" 
+                  [disabled]="miFormulario.invalid"
+                  (click)="enviarMensaje()">
+            Enviar Mensaje
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
