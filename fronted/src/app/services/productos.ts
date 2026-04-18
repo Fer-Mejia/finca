@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class ProductosService {
   private http = inject(HttpClient); // Inject
-  private url = 'https://finca-sho6.onrender.com'; 
+  private url = 'https://finca-sho6.onrender.com/api/productos';
 
   getProductos(): Observable<any[]> {
     return this.http.get<any[]>(this.url);
