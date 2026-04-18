@@ -5,12 +5,14 @@ import { CarritoService } from '../../services/carrito';
 import { AuthService } from '../../services/auth'; 
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Producto } from '../../interfaces/producto'; 
+import { StockStatusPipe } from '../../pipes/stock-pipe'; 
 import Swal from 'sweetalert2'; 
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe], 
+  // 2. AGREGAR StockStatusPipe aquí para cumplir el Punto 15
+  imports: [CommonModule, CurrencyPipe, StockStatusPipe], 
   templateUrl: './productos.html',
   styleUrls: ['./productos.css']
 })
@@ -22,12 +24,11 @@ export class Productos implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute); 
 
-  // --- ESTADO CON SIGNALS (Punto 7 y Punto 12 aplicado) ---
-  // Ahora el Signal sabe que contiene un arreglo de "Producto", no de "any"
+  // --- ESTADO CON SIGNALS (Punto 7 y Punto 12) ---
   listaProductos = signal<Producto[]>([]); 
   textoFiltro = signal('');
 
-  // --- LÓGICA REACTIVA ---
+  // --- LÓGICA REACTIVA CON COMPUTED ---
   productosFiltrados = computed(() => {
     const busqueda = this.textoFiltro().toLowerCase();
     return this.listaProductos().filter(prod => 
@@ -39,7 +40,6 @@ export class Productos implements OnInit {
   ngOnInit() {
     // 1. Cargar la lista inicial de productos
     this.prodService.getProductos().subscribe(data => {
-      // Al ser un servicio que trae datos de MySQL, se asignan a nuestro signal tipado
       this.listaProductos.set(data);
     });
 
@@ -58,7 +58,7 @@ export class Productos implements OnInit {
     this.textoFiltro.set(elemento.value);
   }
 
-  // --- PUNTO 12: Declaramos que el parámetro es de tipo Producto ---
+  // --- PUNTO 12: Tipado con Interfaz ---
   agregarAlCarrito(producto: Producto) {
     // VALIDACIÓN DE SESIÓN
     if (!this.authSvc.usuarioActual()) {
