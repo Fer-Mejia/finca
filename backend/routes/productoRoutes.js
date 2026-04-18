@@ -10,6 +10,8 @@ router.get('/:id', controller.obtenerProducto);
 // Cuando Angular hace un POST a /api/productos, se ejecuta crearProducto
 router.post('/', controller.crearProducto); 
 
+router.put('/:id', controller.editarProducto);
+
 // También añade esta para que funcione el botón de eliminar
 router.delete('/:id', controller.eliminarProducto);
 

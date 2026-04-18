@@ -3,7 +3,7 @@
     <div class="card-header p-3 text-white" style="background-color: #3e2723;">
       <div class="d-flex justify-content-between align-items-center">
         <h4 class="m-0"><i class="bi bi-person-badge me-2"></i>Panel de Administración</h4>
-        <button class="btn btn-light btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#productoModal">
+        <button class="btn btn-light btn-sm fw-bold" (click)="prepararNuevo()" data-bs-toggle="modal" data-bs-target="#productoModal">
           <i class="bi bi-plus-circle me-1"></i> Nuevo Producto
         </button>
       </div>
@@ -17,7 +17,7 @@
               <th>Imagen</th>
               <th>Nombre del Café</th>
               <th>Precio</th>
-              <th class="text-center">Acciones</th>
+              <th>Stock</th> <th class="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -28,8 +28,13 @@
                 </td>
                 <td><strong>{{ p.nombre }}</strong></td>
                 <td>${{ p.precio | number:'1.2-2' }}</td>
+                <td>
+                  <span class="badge" [ngClass]="p.stock > 5 ? 'bg-success' : 'bg-danger'">
+                    {{ p.stock }} pz
+                  </span>
+                </td>
                 <td class="text-center">
-                  <button class="btn btn-outline-primary btn-sm me-2">
+                  <button class="btn btn-outline-primary btn-sm me-2" (click)="prepararEdicion(p)" data-bs-toggle="modal" data-bs-target="#productoModal">
                     <i class="bi bi-pencil-square"></i>
                   </button>
                   <button class="btn btn-outline-danger btn-sm" (click)="eliminarProducto(p.id_producto)">
@@ -39,7 +44,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="4" class="text-center text-muted py-4">No hay productos registrados en La Finca.</td>
+                <td colspan="5" class="text-center text-muted py-4">No hay productos registrados en La Finca.</td>
               </tr>
             }
           </tbody>
@@ -53,31 +58,41 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
       <div class="modal-header text-white" style="background-color: #3e2723;">
-        <h5 class="modal-title" id="modalLabel">Registrar Nuevo Café</h5>
+        <h5 class="modal-title" id="modalLabel">{{ isEditing() ? 'Editar Café' : 'Registrar Nuevo Café' }}</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form #productoForm="ngForm" (ngSubmit)="guardarProducto(productoForm)">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label fw-bold">Nombre</label>
-            <input type="text" name="nombre" ngModel class="form-control" required placeholder="Ej. Caramel Macchiato">
+            <label class="form-label fw-bold text-dark">Nombre</label>
+            <input type="text" name="nombre" [(ngModel)]="productoActual.nombre" class="form-control" required placeholder="Ej. Caramel Macchiato">
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold text-dark">Precio</label>
+              <input type="number" name="precio" [(ngModel)]="productoActual.precio" class="form-control" required placeholder="0.00">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold text-dark">Stock</label>
+              <input type="number" name="stock" [(ngModel)]="productoActual.stock" class="form-control" required placeholder="Cantidad">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold text-dark">URL de Imagen</label>
+            <input type="text" name="imagen" [(ngModel)]="productoActual.imagen" class="form-control" required placeholder="https://link.jpg">
           </div>
           <div class="mb-3">
-            <label class="form-label fw-bold">Precio</label>
-            <input type="number" name="precio" ngModel class="form-control" required placeholder="0.00">
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">URL de Imagen</label>
-            <input type="text" name="imagen" ngModel class="form-control" required placeholder="https://link-de-la-foto.jpg">
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Descripción</label>
-            <textarea name="descripcion" ngModel class="form-control" rows="2" placeholder="Breve descripción del café..."></textarea>
+            <label class="form-label fw-bold text-dark">Descripción</label>
+            <textarea name="descripcion" [(ngModel)]="productoActual.descripcion" class="form-control" rows="2" placeholder="Breve descripción..."></textarea>
           </div>
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-          <button type="submit" class="btn btn-success px-4" [disabled]="productoForm.invalid">Guardar en Menú</button>
+          <button type="submit" class="btn btn-success px-4" [disabled]="productoForm.invalid">
+            {{ isEditing() ? 'Actualizar Cambios' : 'Guardar en Menú' }}
+          </button>
         </div>
       </form>
     </div>
