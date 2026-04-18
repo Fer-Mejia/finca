@@ -15,15 +15,20 @@ export class AuthService {
   private urlLogin = 'http://localhost:3000/api/usuarios/login';
   private urlRegistro = 'http://localhost:3000/api/usuarios';
 
-  // El Signal se inicializa con lo que haya en el Storage
-  usuarioActual = signal<any>(JSON.parse(localStorage.getItem('usuario') || 'null'));
+  // El Signal se inicializa con lo que haya en el Storage (mantiene la sesión al recargar)
+  public usuarioActual = signal<any>(JSON.parse(localStorage.getItem('usuario') || 'null'));
 
+  /**
+   * Intenta iniciar sesión en el servidor.
+   * Si es exitoso, guarda el usuario (incluyendo el rol) en LocalStorage y el Signal.
+   */
   login(correo: string, password: string) {
     return this.http.post(this.urlLogin, { correo, password }).pipe(
       tap((res: any) => {
         if (res && res.usuario) {
+          // Guardamos el objeto completo (id, nombre, correo, rol)
           localStorage.setItem('usuario', JSON.stringify(res.usuario));
-          this.usuarioActual.set(res.usuario); // Actualiza la app
+          this.usuarioActual.set(res.usuario); 
 
           Swal.fire({
             icon: 'success',
@@ -46,6 +51,9 @@ export class AuthService {
     );
   }
 
+  /**
+   * Registra un nuevo cliente en la base de datos.
+   */
   registrar(datos: any) {
     return this.http.post(this.urlRegistro, datos).pipe(
       tap(() => {
@@ -68,10 +76,21 @@ export class AuthService {
     );
   }
 
-  // LOGOUT LIMPIO: Solo borra datos
+  /**
+   * Cierra la sesión, limpia el almacenamiento y redirige al login.
+   */
   logout() {
     localStorage.removeItem('usuario');
-    this.usuarioActual.set(null); // Esto limpia el Nav al instante
+    this.usuarioActual.set(null); 
     this.router.navigate(['/login']);
+  }
+
+  /**
+   * Función de utilidad para verificar si el usuario logueado es administrador.
+   * Se usa en Guards y en el Navbar para mostrar/ocultar opciones.
+   */
+  esAdmin(): boolean {
+    const usuario = this.usuarioActual();
+    return usuario && usuario.rol === 'admin';
   }
 }
