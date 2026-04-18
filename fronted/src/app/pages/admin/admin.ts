@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ProductosService } from '../../services/productos';
+import { Producto } from '../../interfaces/producto'; // IMPORTAMOS LA INTERFAZ
 import Swal from 'sweetalert2';
 
 @Component({
@@ -16,13 +17,14 @@ export class Admin implements OnInit {
   private prodSvc = inject(ProductosService);
   private http = inject(HttpClient);
   
-  // Señales para el estado de la pantalla
-  listaProductos = signal<any[]>([]);
+  // 2. APLICAMOS LA INTERFAZ AL SIGNAL (Punto 12)
+  listaProductos = signal<Producto[]>([]);
   isEditing = signal<boolean>(false);
   idProductoSeleccionado = signal<number | null>(null);
 
-  // Estructura del objeto actual con stock incluido
-  productoActual = {
+  // 3. TIPAMOS EL OBJETO AUXILIAR (Sin el ID, porque es para el formulario)
+  // Opcional: puedes usar Partial<Producto> o definirlo así:
+  productoActual: Omit<Producto, 'id_producto'> = {
     nombre: '',
     precio: 0,
     imagen: '',
@@ -36,12 +38,11 @@ export class Admin implements OnInit {
 
   cargarProductos() {
     this.prodSvc.getProductos().subscribe({
-      next: (data) => this.listaProductos.set(data),
+      next: (data: Producto[]) => this.listaProductos.set(data), // Tipado en la respuesta
       error: (err) => console.error('Error al cargar productos', err)
     });
   }
 
-  // --- Limpiar el formulario para un nuevo registro ---
   prepararNuevo() {
     this.isEditing.set(false);
     this.idProductoSeleccionado.set(null);
@@ -54,30 +55,27 @@ export class Admin implements OnInit {
     };
   }
 
-  // --- Cargar datos en el formulario para editar ---
-  prepararEdicion(p: any) {
+
+  prepararEdicion(p: Producto) {
     this.isEditing.set(true);
     this.idProductoSeleccionado.set(p.id_producto);
     
-    // Copiamos todas las propiedades (incluyendo stock) de forma segura
     this.productoActual = { 
       nombre: p.nombre,
       precio: p.precio,
       imagen: p.imagen,
       descripcion: p.descripcion,
-      stock: p.stock ?? 0 // Si es null en la DB, le pone 0
+      stock: p.stock ?? 0 
     };
   }
 
-  // --- Guardar (Crear o Editar) ---
   guardarProducto(form: NgForm) {
     if (form.invalid) return;
     
-    // Obtenemos los datos del formulario (incluye el stock)
+    // Aquí el objeto 'datos' ya cumple con la estructura de la interfaz
     const datos = form.value;
 
     if (this.isEditing()) {
-      // ACTUALIZAR (PUT)
       this.http.put(`http://localhost:3000/api/productos/${this.idProductoSeleccionado()}`, datos)
         .subscribe({
           next: () => {
@@ -90,7 +88,6 @@ export class Admin implements OnInit {
           }
         });
     } else {
-      // CREAR (POST)
       this.http.post('http://localhost:3000/api/productos', datos)
         .subscribe({
           next: () => {
@@ -105,7 +102,6 @@ export class Admin implements OnInit {
     }
   }
 
-  // --- Cerrar modal y refrescar tabla ---
   finalizarProceso(form: NgForm) {
     this.cargarProductos();
     form.reset();
@@ -113,7 +109,6 @@ export class Admin implements OnInit {
     closeBtn?.click();
   }
 
-  // --- Eliminar ---
   eliminarProducto(id: number) {
     Swal.fire({
       title: '¿Estás seguro?',

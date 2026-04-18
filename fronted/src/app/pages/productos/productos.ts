@@ -1,9 +1,10 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router'; // Importamos ActivatedRoute
+import { ActivatedRoute, Router } from '@angular/router';
 import { ProductosService } from '../../services/productos';
 import { CarritoService } from '../../services/carrito'; 
 import { AuthService } from '../../services/auth'; 
 import { CommonModule, CurrencyPipe } from '@angular/common';
+import { Producto } from '../../interfaces/producto'; 
 import Swal from 'sweetalert2'; 
 
 @Component({
@@ -14,18 +15,19 @@ import Swal from 'sweetalert2';
   styleUrls: ['./productos.css']
 })
 export class Productos implements OnInit {
-  // --- INYECCIONES (Cumpliendo Punto 2 con inject) ---
+  // --- INYECCIONES (Punto 2) ---
   private prodService = inject(ProductosService);
   private carritoSvc = inject(CarritoService);
   public authSvc = inject(AuthService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute); // Necesario para el Punto 9
+  private route = inject(ActivatedRoute); 
 
-  // --- ESTADO CON SIGNALS (Cumpliendo Punto 7) ---
-  listaProductos = signal<any[]>([]);
+  // --- ESTADO CON SIGNALS (Punto 7 y Punto 12 aplicado) ---
+  // Ahora el Signal sabe que contiene un arreglo de "Producto", no de "any"
+  listaProductos = signal<Producto[]>([]); 
   textoFiltro = signal('');
 
-  // --- LÓGICA REACTIVA CON COMPUTED (Punto 7 avanzado) ---
+  // --- LÓGICA REACTIVA ---
   productosFiltrados = computed(() => {
     const busqueda = this.textoFiltro().toLowerCase();
     return this.listaProductos().filter(prod => 
@@ -37,28 +39,27 @@ export class Productos implements OnInit {
   ngOnInit() {
     // 1. Cargar la lista inicial de productos
     this.prodService.getProductos().subscribe(data => {
+      // Al ser un servicio que trae datos de MySQL, se asignan a nuestro signal tipado
       this.listaProductos.set(data);
     });
 
-    // 2. USO DE QUERYPARAMMAP (CUMPLIENDO PUNTO 9 DE LA RÚBRICA)
-    // Escuchamos si hay parámetros en la URL como ?buscar=latte
+    // 2. USO DE QUERYPARAMMAP (Punto 9)
     this.route.queryParamMap.subscribe(params => {
       const valorUrl = params.get('buscar');
       if (valorUrl) {
-        // Si existe un parámetro en la URL, actualizamos nuestro Signal
         this.textoFiltro.set(valorUrl);
         console.log('Punto 9 - Parámetro recuperado de la URL:', valorUrl);
       }
     });
   }
 
-  // Se ejecuta cuando el usuario escribe en el buscador de la vista
   actualizarFiltro(event: Event) {
     const elemento = event.target as HTMLInputElement;
     this.textoFiltro.set(elemento.value);
   }
 
-  agregarAlCarrito(producto: any) {
+  // --- PUNTO 12: Declaramos que el parámetro es de tipo Producto ---
+  agregarAlCarrito(producto: Producto) {
     // VALIDACIÓN DE SESIÓN
     if (!this.authSvc.usuarioActual()) {
       Swal.fire({
