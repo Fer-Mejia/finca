@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ProductosService } from '../../services/productos';
-import { Producto } from '../../interfaces/producto'; // IMPORTAMOS LA INTERFAZ
+import { Producto } from '../../interfaces/producto'; 
 import Swal from 'sweetalert2';
 
 @Component({
@@ -17,13 +17,13 @@ export class Admin implements OnInit {
   private prodSvc = inject(ProductosService);
   private http = inject(HttpClient);
   
-  // 2. APLICAMOS LA INTERFAZ AL SIGNAL (Punto 12)
+  // URL base para el backend en Render
+  private urlApi = 'https://finca-sho6.onrender.com/api/productos';
+  
   listaProductos = signal<Producto[]>([]);
   isEditing = signal<boolean>(false);
   idProductoSeleccionado = signal<number | null>(null);
 
-  // 3. TIPAMOS EL OBJETO AUXILIAR (Sin el ID, porque es para el formulario)
-  // Opcional: puedes usar Partial<Producto> o definirlo así:
   productoActual: Omit<Producto, 'id_producto'> = {
     nombre: '',
     precio: 0,
@@ -38,7 +38,7 @@ export class Admin implements OnInit {
 
   cargarProductos() {
     this.prodSvc.getProductos().subscribe({
-      next: (data: Producto[]) => this.listaProductos.set(data), // Tipado en la respuesta
+      next: (data: Producto[]) => this.listaProductos.set(data),
       error: (err) => console.error('Error al cargar productos', err)
     });
   }
@@ -54,7 +54,6 @@ export class Admin implements OnInit {
       stock: 0 
     };
   }
-
 
   prepararEdicion(p: Producto) {
     this.isEditing.set(true);
@@ -72,11 +71,11 @@ export class Admin implements OnInit {
   guardarProducto(form: NgForm) {
     if (form.invalid) return;
     
-    // Aquí el objeto 'datos' ya cumple con la estructura de la interfaz
     const datos = form.value;
 
     if (this.isEditing()) {
-      this.http.put(`http://localhost:3000/api/productos/${this.idProductoSeleccionado()}`, datos)
+      // CAMBIO AQUÍ: Usamos la URL de Render para actualizar
+      this.http.put(`${this.urlApi}/${this.idProductoSeleccionado()}`, datos)
         .subscribe({
           next: () => {
             Swal.fire('¡Actualizado!', 'Café modificado con éxito', 'success');
@@ -88,7 +87,8 @@ export class Admin implements OnInit {
           }
         });
     } else {
-      this.http.post('http://localhost:3000/api/productos', datos)
+      // CAMBIO AQUÍ: Usamos la URL de Render para crear nuevo
+      this.http.post(this.urlApi, datos)
         .subscribe({
           next: () => {
             Swal.fire('¡Añadido!', 'Nuevo café en el menú', 'success');
@@ -120,7 +120,8 @@ export class Admin implements OnInit {
       confirmButtonText: 'Sí, eliminar'
     }).then((result) => {
       if (result.isConfirmed) {
-        this.http.delete(`http://localhost:3000/api/productos/${id}`).subscribe({
+        // CAMBIO AQUÍ: Usamos la URL de Render para eliminar
+        this.http.delete(`${this.urlApi}/${id}`).subscribe({
           next: () => {
             this.cargarProductos();
             Swal.fire('¡Eliminado!', 'Producto quitado del sistema.', 'success');
