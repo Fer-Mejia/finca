@@ -89,11 +89,11 @@ const repararTodo = (req, res) => {
   });
 };
 
-// IMPORTANTE: Asegúrate de agregar 'repararTodo' a tu module.exports
-// Ejemplo: module.exports = { ..., repararTodo };
+
 
 module.exports = {
   registrarUsuario,
   listarUsuarios,
-  login
+  login,
+  repararTodo
 };
