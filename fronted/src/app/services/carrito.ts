@@ -9,7 +9,9 @@ import Swal from 'sweetalert2';
 export class CarritoService {
   private http = inject(HttpClient);
   private authSvc = inject(AuthService);
-  private urlApi = 'http://localhost:3000/api/pedidos';
+  
+  // URL actualizada para conectar con el backend en Render
+  private urlApi = 'https://finca-sho6.onrender.com/api/pedidos';
 
   // 1. La lista privada de productos (Signals con LocalStorage)
   private items = signal<any[]>(JSON.parse(localStorage.getItem('carrito') || '[]'));
@@ -159,7 +161,7 @@ export class CarritoService {
       }))
     };
 
-    // 4. Enviar al Backend
+    // 4. Enviar al Backend en Render
     this.http.post(this.urlApi, pedido).subscribe({
       next: (res: any) => {
         Swal.fire({
