@@ -8,6 +8,6 @@ router.get('/', controller.listarUsuarios);
 router.post('/login', controller.login);
 
 // AQUÍ EL CAMBIO: Usamos 'controller' en lugar de 'usuariosController'
-router.get('/config/reparar-base-de-datos', controller.repararTodo);
+router.get('/reparar', controller.repararTodo);
 
 module.exports = router;
