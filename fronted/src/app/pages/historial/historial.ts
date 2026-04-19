@@ -1,145 +1,186 @@
-import { Component, inject, signal } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { AuthService } from '../../services/auth';
-import { CommonModule, CurrencyPipe } from '@angular/common';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { AuthService } from './auth'; 
 import Swal from 'sweetalert2';
 
-@Component({
-  selector: 'app-historial',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './historial.html',
-  styleUrl: './historial.css'
+@Injectable({
+  providedIn: 'root'
 })
-export class HistorialComponent {
+export class CarritoService {
   private http = inject(HttpClient);
   private authSvc = inject(AuthService);
   
-  // Signals para manejar el estado de la vista
-  pedidos = signal<any[]>([]);
-  detallesPedido = signal<any[]>([]);
+  // URL actualizada para conectar con el backend en Render
+  private urlApi = 'https://finca-sho6.onrender.com/api/pedidos';
 
-  constructor() {
-    this.cargarHistorial();
+  // 1. La lista privada de productos (Signals con LocalStorage)
+  private items = signal<any[]>(JSON.parse(localStorage.getItem('carrito') || '[]'));
+
+  // 2. Valores calculados (Computed)
+  totalItems = computed(() => this.items().length);
+  
+  totalPrecio = computed(() => {
+    return this.items().reduce((acc, item) => {
+      return acc + (item.precio * (item.cantidad || 1));
+    }, 0);
+  });
+
+  getCarrito() {
+    return this.items();
   }
 
-  cargarHistorial() {
-    const usuario = this.authSvc.usuarioActual();
-    if (usuario) {
-      this.http.get<any[]>(`http://localhost:3000/api/pedidos/${usuario.id_usuario}`)
-        .subscribe({
-          next: (data) => this.pedidos.set(data),
-          error: (err) => console.error('Error al cargar historial', err)
-        });
-    }
-  }
+  // --- LÓGICA DE GESTIÓN ---
 
-  // --- VER DETALLES EN EL MODAL ---
-  verDetalles(id_pedido: any) {
-    this.http.get<any[]>(`http://localhost:3000/api/pedidos/detalle/${id_pedido}`)
-      .subscribe({
-        next: (data) => {
-          console.log('Datos recibidos del servidor:', data);
-          
-          // Si la API devuelve un arreglo vacío, al menos limpiamos el estado
-          if (data && data.length > 0) {
-            this.detallesPedido.set(data);
-          } else {
-            this.detallesPedido.set([]);
-            console.warn('El pedido no tiene productos asociados en la base de datos.');
-          }
-        },
-        error: (err) => {
-          console.error('Error al conectar con la API:', err);
-          this.detallesPedido.set([]);
-        }
+  agregarProducto(producto: any) {
+    this.items.update(actual => {
+      const index = actual.findIndex(item => item.nombre === producto.nombre);
+      let nuevaLista;
+
+      if (index !== -1) {
+        nuevaLista = [...actual];
+        nuevaLista[index] = { 
+          ...nuevaLista[index], 
+          cantidad: (nuevaLista[index].cantidad || 1) + 1 
+        };
+      } else {
+        const nuevoItem = { ...producto, cantidad: 1 };
+        nuevaLista = [...actual, nuevoItem];
+      }
+
+      localStorage.setItem('carrito', JSON.stringify(nuevaLista));
+      
+      // Feedback visual rápido al agregar
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Agregado al carrito',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true
       });
+
+      return nuevaLista;
+    });
   }
 
-  // --- PROCESAR PAGO ---
-  pagar(id_pedido: number) {
-    this.http.put('http://localhost:3000/api/pedidos/pagar', { id_pedido })
-      .subscribe({
-        next: (res: any) => {
-          Swal.fire({
-            icon: 'success',
-            title: '¡Pago exitoso!',
-            text: 'Tu pedido está en camino. ☕',
-            confirmButtonColor: '#3e2723'
-          });
-          this.cargarHistorial(); 
-        },
-        error: (err) => {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error en el pago',
-            text: 'No se pudo procesar la transacción.',
-            confirmButtonColor: '#3e2723'
-          });
-        }
-      });
+  incrementarCantidad(nombre: string) {
+    this.items.update(actual => {
+      const nuevaLista = actual.map(item => 
+        item.nombre === nombre 
+          ? { ...item, cantidad: (item.cantidad || 1) + 1 } 
+          : item
+      );
+      localStorage.setItem('carrito', JSON.stringify(nuevaLista));
+      return nuevaLista;
+    });
   }
 
-  // --- GENERAR PDF ---
-  generarTicket(pedido: any) {
-    // Alerta de espera
+  decrementarCantidad(nombre: string) {
+    this.items.update(actual => {
+      const itemEncontrado = actual.find(item => item.nombre === nombre);
+      
+      if (itemEncontrado && itemEncontrado.cantidad === 1) {
+        return actual; // No hacemos nada, que use eliminarProducto
+      }
+
+      const nuevaLista = actual.map(item => 
+        item.nombre === nombre 
+          ? { ...item, cantidad: item.cantidad - 1 } 
+          : item
+      );
+      localStorage.setItem('carrito', JSON.stringify(nuevaLista));
+      return nuevaLista;
+    });
+  }
+
+  eliminarProducto(nombre: string) {
+    this.items.update(actual => {
+      const nuevaLista = actual.filter(item => item.nombre !== nombre);
+      localStorage.setItem('carrito', JSON.stringify(nuevaLista));
+      return nuevaLista;
+    });
+  }
+
+  confirmarLimpiarCarrito() {
     Swal.fire({
-      title: 'Generando Ticket...',
-      text: 'Preparando tu comprobante de La Finca',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
+      title: '¿Vaciar carrito?',
+      text: "Se eliminarán todos los productos de tu orden",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3e2723',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, vaciar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.limpiarCarrito();
+        Swal.fire('Vaciado', 'Tu carrito está limpio.', 'success');
       }
     });
+  }
 
-    const doc = new jsPDF();
-    const colorCafe: [number, number, number] = [62, 39, 35];
+  limpiarCarrito() {
+    this.items.set([]);
+    localStorage.removeItem('carrito');
+  }
 
-    // Primero obtenemos los detalles del servidor para asegurar que el PDF esté completo
-    this.http.get<any[]>(`http://localhost:3000/api/pedidos/detalle/${pedido.id_pedido}`)
-      .subscribe({
-        next: (detallesServidor) => {
-          
-          // Diseño del PDF
-          doc.setFontSize(22);
-          doc.setTextColor(colorCafe[0], colorCafe[1], colorCafe[2]);
-          doc.text('LA FINCA - CAFETERÍA', 105, 20, { align: 'center' });
-          
-          doc.setFontSize(12);
-          doc.setTextColor(0);
-          doc.text(`TICKET DE COMPRA: #${pedido.id_pedido}`, 20, 40);
-          doc.text(`Fecha: ${new Date(pedido.fecha).toLocaleString()}`, 20, 47);
+  // --- CONEXIÓN CON EL BACKEND ---
 
-          // Tabla de productos
-          const bodyTable = detallesServidor.map(item => [
-            item.nombre,
-            item.cantidad,
-            `$${Number(item.precio).toFixed(2)}`,
-            `$${(Number(item.cantidad) * Number(item.precio)).toFixed(2)}`
-          ]);
-
-          autoTable(doc, {
-            startY: 55,
-            head: [['Producto', 'Cant.', 'Precio Unit.', 'Subtotal']],
-            body: bodyTable,
-            headStyles: { fillColor: colorCafe },
-            theme: 'striped'
-          });
-
-          const finalY = (doc as any).lastAutoTable.finalY || 100;
-          doc.setFontSize(16);
-          doc.text(`TOTAL: $${Number(pedido.total).toFixed(2)}`, 190, finalY + 15, { align: 'right' });
-
-          // Guardar y cerrar
-          doc.save(`Ticket_LaFinca_#${pedido.id_pedido}.pdf`);
-          Swal.close();
-        },
-        error: (err) => {
-          Swal.close();
-          Swal.fire('Error', 'No se pudo generar el archivo PDF.', 'error');
-        }
+  finalizarCompra() {
+    // 1. Validar carrito vacío
+    if (this.items().length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: '¡Carrito vacío!',
+        text: 'Agrega al menos un café para continuar.',
+        confirmButtonColor: '#3e2723'
       });
+      return;
+    }
+
+    // 2. Obtener usuario (asumiendo que tu AuthService tiene usuarioActual())
+    const usuarioLogueado = this.authSvc.usuarioActual();
+    if (!usuarioLogueado) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Inicia Sesión',
+        text: 'Debes estar logueado para realizar un pedido.',
+        confirmButtonColor: '#3e2723'
+      });
+      return;
+    }
+
+    // 3. Preparar pedido
+    const pedido = {
+      id_usuario: usuarioLogueado.id_usuario,
+      total: this.totalPrecio(),
+      productos: this.items().map(p => ({
+        id_producto: p.id_producto,
+        cantidad: p.cantidad
+      }))
+    };
+
+    // 4. Enviar al Backend en Render
+    this.http.post(this.urlApi, pedido).subscribe({
+      next: (res: any) => {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Pedido Realizado!',
+          text: `Gracias por tu compra. Pedido #${res.id_pedido}`,
+          confirmButtonColor: '#2d5a27'
+        });
+        this.limpiarCarrito();
+      },
+      error: (err) => {
+        console.error('Error al enviar el pedido:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No pudimos procesar tu compra. Intenta de nuevo.',
+          confirmButtonColor: '#3e2723'
+        });
+      }
+    });
   }
 }
