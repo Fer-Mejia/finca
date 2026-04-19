@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/usuarioController');
+// Aquí lo llamamos 'controller' para que coincida con tus otras rutas
+const controller = require('../controllers/usuarioController'); 
 
 router.post('/', controller.registrarUsuario);
 router.get('/', controller.listarUsuarios);
 router.post('/login', controller.login);
-router.get('/config/reparar-base-de-datos', usuariosController.repararTodo);
+
+// AQUÍ EL CAMBIO: Usamos 'controller' en lugar de 'usuariosController'
+router.get('/config/reparar-base-de-datos', controller.repararTodo);
 
 module.exports = router;
